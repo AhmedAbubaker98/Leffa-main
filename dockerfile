@@ -1,31 +1,39 @@
-# Use an official Python runtime with CUDA
-FROM python:3.10-slim
+# Use BuildKit explicitly for parallel layer processing
+# syntax=docker/dockerfile:1.4
+FROM nvidia/cuda:12.1.1-base-ubuntu22.04
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    PIP_NO_CACHE_DIR=1 \
+    DOCKER_BUILDKIT=1 \
+    TORCH_CUDA_ARCH_LIST="8.0"  
+    # Disable GPU arch compilation
 
-# Set working directory
-WORKDIR /app
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    git \
-    curl \
+# Use faster APT mirrors and install minimal runtime deps
+RUN sed -i 's/archive.ubuntu.com/mirror.rackspace.com/g' /etc/apt/sources.list && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        python3.10 \
+        python3-pip \
+        libgl1 \
+        libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements
+WORKDIR /app
+
+# Install PyTorch with pre-built CUDA binaries first
+# Using torch-nightly for latest optimized binaries
 COPY requirements.txt .
+RUN pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu121 && \
+    pip install -r requirements.txt && \
+    find /usr/local/lib -type d -name '__pycache__' -exec rm -rf {} + && \
+    find /usr/local/lib -type d -name 'tests' -exec rm -rf {} +
 
-# Install Python dependencies
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
-
-# Copy the rest of the application
+# Copy application code (exclude ckpts via .dockerignore)
 COPY . .
 
-# Expose the FastAPI port
+# Runtime config
+VOLUME /app/ckpts  # Mount models at runtime
 EXPOSE 8000
-
-# Run the application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "leffa_api:app", "--host", "0.0.0.0", "--port", "8000"]

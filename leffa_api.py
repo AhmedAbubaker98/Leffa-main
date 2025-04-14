@@ -30,6 +30,8 @@ logger = logging.getLogger(__name__)
 # --------------------- Lazy Predictor ---------------------
 @lru_cache()
 def get_predictor():
+    if not os.path.exists("./ckpts"):
+        raise FileNotFoundError("Checkpoints directory not mounted. Please mount the volume containing ckpts")
     logger.info("Initializing LeffaPredictor...")
     return LeffaPredictor()
 

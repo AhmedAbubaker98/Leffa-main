@@ -1,23 +1,21 @@
-av
+# av
 accelerate
 config
-cloudpickle
+# cloudpickle
 diffusers
 einops
-fvcore
-gradio
-gradio-client
-imageio
-matplotlib
+# fvcore
+# imageio
+# matplotlib
 numpy
 omegaconf
 onnxruntime
 opencv-python
 pandas
 pillow
-pycocotools
+# pycocotools
 pyyaml
-psutil
+# psutil
 peft
 regex==2024.5.15
 safetensors
@@ -27,8 +25,11 @@ timm
 tokenizers
 torch
 torchaudio
-torchmetrics
+# torchmetrics
 torchvision
 tqdm
 transformers
+fastapi
+uvicorn
+huggingface-hub
 # triton

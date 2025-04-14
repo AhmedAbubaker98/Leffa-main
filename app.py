@@ -2,25 +2,19 @@ import argparse
 import os
 import torch
 import numpy as np
-print("1")
 from PIL import Image
-from huggingface_hub import snapshot_download
 from leffa.transform import LeffaTransform
-print("2")
 from leffa.model import LeffaModel
 from leffa.inference import LeffaInference
 from leffa_utils.garment_agnostic_mask_predictor import AutoMasker
 from leffa_utils.densepose_predictor import DensePosePredictor
-print("3")
 from leffa_utils.utils import resize_and_center, list_dir, get_agnostic_mask_hd, get_agnostic_mask_dc, preprocess_garment_image
 from preprocess.humanparsing.run_parsing import Parsing
 from preprocess.openpose.run_openpose import OpenPose
 
-import gradio as gr
-print("4")
-
-# Download checkpoints
-snapshot_download(repo_id="franciszzj/Leffa", local_dir="./ckpts")
+# Check if checkpoints exist
+if not os.path.exists("./ckpts"):
+    raise FileNotFoundError("Checkpoints not found. Please mount the ckpts directory containing the model files.")
 
 # Check if GPU is available and set the device
 if torch.cuda.is_available():
@@ -256,198 +250,5 @@ if __name__ == "__main__":
     if args.dense_out:
         print(f"DensePose image saved to {args.dense_out}")
 
-    # Uncomment the following lines to run the Gradio app
-    # leffa_predictor = LeffaPredictor()
-    # example_dir = "./ckpts/examples"
-    # person1_images = list_dir(f"{example_dir}/person1")
-    # person2_images = list_dir(f"{example_dir}/person2")
-    # garment_images = list_dir(f"{example_dir}/garment")
-
-    # title = "## Leffa: Learning Flow Fields in Attention for Controllable Person Image Generation"
-    # link = """[📚 Paper](https://arxiv.org/abs/2412.08486) - [🤖 Code](https://github.com/franciszzj/Leffa) - [🔥 Demo](https://huggingface.co/spaces/franciszzj/Leffa) - [🤗 Model](https://huggingface.co/franciszzj/Leffa)
-           
-    #        Star ⭐ us if you like it!
-    #        """
-    # news = """## News
-    #         - 09/Jan/2025. Inference defaults to float16, generating an image in 6 seconds (on A100).
-
-    #         More news can be found in the [GitHub repository](https://github.com/franciszzj/Leffa).
-    #         """
-    # description = "Leffa is a unified framework for controllable person image generation that enables precise manipulation of both appearance (i.e., virtual try-on) and pose (i.e., pose transfer)."
-    # note = "Note: The models used in the demo are trained solely on academic datasets. Virtual try-on uses VITON-HD/DressCode, and pose transfer uses DeepFashion."
-
-    # with gr.Blocks(theme=gr.themes.Default(primary_hue=gr.themes.colors.pink, secondary_hue=gr.themes.colors.red)).queue() as demo:
-    #     gr.Markdown(title)
-    #     gr.Markdown(link)
-    #     gr.Markdown(news)
-    #     gr.Markdown(description)
-
-    #     with gr.Tab("Control Appearance (Virtual Try-on)"):
-    #         with gr.Row():
-    #             with gr.Column():
-    #                 gr.Markdown("#### Person Image")
-    #                 vt_src_image = gr.Image(
-    #                     sources=["upload"],
-    #                     type="filepath",
-    #                     label="Person Image",
-    #                     width=512,
-    #                     height=512,
-    #                 )
-    #                 gr.Examples(
-    #                     inputs=vt_src_image,
-    #                     examples_per_page=10,
-    #                     examples=person1_images,
-    #                 )
-
-    #             with gr.Column():
-    #                 gr.Markdown("#### Garment Image")
-    #                 vt_ref_image = gr.Image(
-    #                     sources=["upload"],
-    #                     type="filepath",
-    #                     label="Garment Image",
-    #                     width=512,
-    #                     height=512,
-    #                 )
-    #                 # New checkbox to choose preprocessing.
-    #                 preprocess_garment_checkbox = gr.Checkbox(
-    #                     label="Preprocess Garment Image (PNG only)",
-    #                     value=False
-    #                 )
-    #                 gr.Examples(
-    #                     inputs=vt_ref_image,
-    #                     examples_per_page=10,
-    #                     examples=garment_images,
-    #                 )
-
-    #             with gr.Column():
-    #                 gr.Markdown("#### Generated Image")
-    #                 vt_gen_image = gr.Image(
-    #                     label="Generated Image",
-    #                     width=512,
-    #                     height=512,
-    #                 )
-    #                 with gr.Row():
-    #                     vt_gen_button = gr.Button("Generate")
-    #                 with gr.Accordion("Advanced Options", open=False):
-    #                     vt_model_type = gr.Radio(
-    #                         label="Model Type",
-    #                         choices=[("VITON-HD (Recommended)", "viton_hd"),
-    #                                  ("DressCode (Experimental)", "dress_code")],
-    #                         value="viton_hd",
-    #                     )
-    #                     vt_garment_type = gr.Radio(
-    #                         label="Garment Type",
-    #                         choices=[("Upper", "upper_body"),
-    #                                  ("Lower", "lower_body"),
-    #                                  ("Dress", "dresses")],
-    #                         value="upper_body",
-    #                     )
-    #                     vt_ref_acceleration = gr.Radio(
-    #                         label="Accelerate Reference UNet (may slightly reduce performance)",
-    #                         choices=[("True", True), ("False", False)],
-    #                         value=False,
-    #                     )
-    #                     vt_repaint = gr.Radio(
-    #                         label="Repaint Mode",
-    #                         choices=[("True", True), ("False", False)],
-    #                         value=False,
-    #                     )
-    #                     vt_step = gr.Number(
-    #                         label="Inference Steps", minimum=30, maximum=100, step=1, value=30)
-    #                     vt_scale = gr.Number(
-    #                         label="Guidance Scale", minimum=0.1, maximum=5.0, step=0.1, value=2.5)
-    #                     vt_seed = gr.Number(
-    #                         label="Random Seed", minimum=-1, maximum=2147483647, step=1, value=42)
-    #                 with gr.Accordion("Debug", open=False):
-    #                     vt_mask = gr.Image(
-    #                         label="Generated Mask",
-    #                         width=256,
-    #                         height=256,
-    #                     )
-    #                     vt_densepose = gr.Image(
-    #                         label="Generated DensePose",
-    #                         width=256,
-    #                         height=256,
-    #                     )
-
-    #             # Pass the new checkbox value as an extra input.
-    #             vt_gen_button.click(
-    #                 fn=leffa_predictor.leffa_predict_vt,
-    #                 inputs=[
-    #                     vt_src_image, vt_ref_image, vt_ref_acceleration,
-    #                     vt_step, vt_scale, vt_seed, vt_model_type,
-    #                     vt_garment_type, vt_repaint, preprocess_garment_checkbox
-    #                 ],
-    #                 outputs=[vt_gen_image, vt_mask, vt_densepose]
-    #             )
-
-    #     with gr.Tab("Control Pose (Pose Transfer)"):
-    #         with gr.Row():
-    #             with gr.Column():
-    #                 gr.Markdown("#### Person Image")
-    #                 pt_ref_image = gr.Image(
-    #                     sources=["upload"],
-    #                     type="filepath",
-    #                     label="Person Image",
-    #                     width=512,
-    #                     height=512,
-    #                 )
-    #                 gr.Examples(
-    #                     inputs=pt_ref_image,
-    #                     examples_per_page=10,
-    #                     examples=person1_images,
-    #                 )
-    #             with gr.Column():
-    #                 gr.Markdown("#### Target Pose Person Image")
-    #                 pt_src_image = gr.Image(
-    #                     sources=["upload"],
-    #                     type="filepath",
-    #                     label="Target Pose Person Image",
-    #                     width=512,
-    #                     height=512,
-    #                 )
-    #                 gr.Examples(
-    #                     inputs=pt_src_image,
-    #                     examples_per_page=10,
-    #                     examples=person2_images,
-    #                 )
-    #             with gr.Column():
-    #                 gr.Markdown("#### Generated Image")
-    #                 pt_gen_image = gr.Image(
-    #                     label="Generated Image",
-    #                     width=512,
-    #                     height=512,
-    #                 )
-    #                 with gr.Row():
-    #                     pose_transfer_gen_button = gr.Button("Generate")
-    #                 with gr.Accordion("Advanced Options", open=False):
-    #                     pt_ref_acceleration = gr.Radio(
-    #                         label="Accelerate Reference UNet",
-    #                         choices=[("True", True), ("False", False)],
-    #                         value=False,
-    #                     )
-    #                     pt_step = gr.Number(
-    #                         label="Inference Steps", minimum=30, maximum=100, step=1, value=30)
-    #                     pt_scale = gr.Number(
-    #                         label="Guidance Scale", minimum=0.1, maximum=5.0, step=0.1, value=2.5)
-    #                     pt_seed = gr.Number(
-    #                         label="Random Seed", minimum=-1, maximum=2147483647, step=1, value=42)
-    #                 with gr.Accordion("Debug", open=False):
-    #                     pt_mask = gr.Image(
-    #                         label="Generated Mask",
-    #                         width=256,
-    #                         height=256,
-    #                     )
-    #                     pt_densepose = gr.Image(
-    #                         label="Generated DensePose",
-    #                         width=256,
-    #                         height=256,
-    #                     )
-    #             pose_transfer_gen_button.click(
-    #                 fn=leffa_predictor.leffa_predict_pt,
-    #                 inputs=[pt_src_image, pt_ref_image, pt_ref_acceleration, pt_step, pt_scale, pt_seed],
-    #                 outputs=[pt_gen_image, pt_mask, pt_densepose]
-    #             )
-
-    #     gr.Markdown(note)
-    #     demo.launch(share=True, server_port=7860, allowed_paths=["./ckpts/examples"])
+    
+    print("Inference complete.")
