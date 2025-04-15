@@ -1,21 +1,21 @@
-# av
+av
 accelerate
 config
-# cloudpickle
+cloudpickle
 diffusers
 einops
-# fvcore
-# imageio
-# matplotlib
+fvcore
+imageio
+matplotlib
 numpy
 omegaconf
 onnxruntime
 opencv-python
 pandas
 pillow
-# pycocotools
+pycocotools
 pyyaml
-# psutil
+psutil
 peft
 regex==2024.5.15
 safetensors
